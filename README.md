@@ -28,7 +28,7 @@ adata = sc.read_h5ad(os.path.join('data', 'nk_cell_preprocessed.h5ad'))
 Then simply sketch your data by,
 ```python
 
-# Parameters
+# Inputs
 # adata: annotated data object (dimensions = cells x features)
 # sample_set_key: string referring to the key within adata.obs that contains the sample-sets to subsample
 # sample_set_inds: (alternative to specifying sample_set_key) list of arrays containing the indices of the sample-sets to subsample 
