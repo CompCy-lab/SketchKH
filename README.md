@@ -2,7 +2,7 @@
 Distribution-Informed Sketching with Kernel Herding 
 
 ## Overview
-We provide a set of functions for distribution-preserving sketching of multiple single-cell samples via Kernel Herding. Our sketeches select a small, representative set of cells from each profiled sample so that all major immune cell-types and their relative frequencies are well-represented. 
+We provide a set of functions for distribution-aware sketching of multiple single-cell samples via Kernel Herding. Our sketeches select a small, representative set of cells from each profiled sample so that all major immune cell-types and their relative frequencies are well-represented. 
 * Please see our paper for more information (ACM-BCB 2022) : https://arxiv.org/abs/2207.00584
 * Updated : July 25, 2022
 
@@ -18,7 +18,7 @@ git clone https://github.com/CompCy-lab/SketchKH.git
 ```
 
 ## Example usage
-To perform sketching, first read in a preprocessed `.h5ad` adata object.
+To perform sketching, first read in a preprocessed `.h5ad` adata object. This dataset contains multiple profiled single-cell samples. Hence, sketches will select a limited set of cells from each profiled sample. 
 
 ```python
 import scanpy as sc
