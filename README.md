@@ -25,7 +25,7 @@ import scanpy as sc
 import os
 adata = sc.read_h5ad(os.path.join('data', 'nk_cell_preprocessed.h5ad'))
 ```
-Then simply sketch your data by,
+Then simply sketch your data with 500 cells per sample-set by,
 ```python
 
 # Inputs
