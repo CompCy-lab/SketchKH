@@ -5,6 +5,7 @@ from tqdm import tqdm
 import anndata
 from typing import Union
 import scipy
+import logging
 
 def random_feats(X: np.ndarray,
                 gamma: Union[int, float] = 1,
@@ -59,10 +60,11 @@ def kernel_herding(phi: np.ndarray,
     w_t = np.mean(phi, axis=0)
     w_0 = w_t
     kh_indices = []
-    for _ in range(1, num_subsamples + 1):
+    while len(kh_indices) < num_subsamples:
         new_ind = np.argmax(np.dot(phi, w_t))
         w_t = w_t + w_0 - phi[new_ind]
         kh_indices.append(new_ind)
+        kh_indices = list(set(kh_indices))
 
     return kh_indices
 
@@ -138,7 +140,7 @@ def sketch(adata,
             ~ if sample_set_key is None, will parse according to sample_set_inds
             ~ if sample_set_key is None and sample_set_inds is None, will use all cells as a single sample-set 
     sample_set_inds: list (default = None)
-        list of arrays containing the indices of the sample-sets to subsample. (dimensions = len(sample_sets)) e.g. [np.array([]), np.array([]), ... , np.array([])]
+        list of arrays containig the indices of the sample-sets to subsample. (dimensions = len(sample_sets)) e.g. [np.array([]), np.array([]), ... , np.array([])]
             ~ if sample_set_key is None and sample_set_inds is None, will use all cells as a single sample-set 
     gamma: Union([int, float]) (default = 1)
         scale for standard deviation of the normal distribution within random Fourier frequency feature computation
@@ -147,7 +149,7 @@ def sketch(adata,
     num_samples: int (default = None)
         number of cells to subsample per sample-set
     n_jobs: int (default = -1)
-        number of tasks for
+        number of tasks
     ----------
 
     Returns
@@ -168,6 +170,11 @@ def sketch(adata,
     elif sample_set_inds is None:
         sample_set_inds = [np.arange(0, adata.X.shape[0])]
         
+    min_cell_size = min([len(i) for i in sample_set_inds])
+    if num_subsamples > min_cell_size:
+        logging.warning(f'Number of subsamples per sample-set {num_subsamples} is greater than the maximum number of cells in the smallest sample-set {min_cell_size}. \n Performing subsampling using {min_cell_size} cells per sample-set')
+        num_subsamples = min_cell_size
+        
     n_sample_sets = len(sample_set_inds)
     X = _parse_input(adata)
 
@@ -184,6 +191,5 @@ def sketch(adata,
         adata_subsample.append(subsampled_sample_set)
 
     adata_subsample = anndata.concat(adata_subsample)
-    adata_subsample.obs_names_make_unique()
 
     return kh_indices, adata_subsample
