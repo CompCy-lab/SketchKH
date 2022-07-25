@@ -18,7 +18,7 @@ git clone https://github.com/CompCy-lab/SketchKH.git
 ```
 
 ## Example usage
-To perform sketching, first read in a preprocessed `.h5ad` adata object. This dataset contains multiple profiled single-cell samples. Hence, sketches will select a limited set of cells from each profiled sample. 
+To perform sketching, first read in a preprocessed `.h5ad` adata object. This dataset contains multiple profiled single-cell samples. Hence, sketches will select a limited set of cells from each profiled sample. We refer to each profiled sample as a *sample-set*. 
 
 ```python
 import scanpy as sc
