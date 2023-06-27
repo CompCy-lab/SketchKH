@@ -2,17 +2,22 @@
 Distribution-Informed Sketching with Kernel Herding 
 
 ## Overview
-We provide a set of functions for distribution-aware sketching of multiple profiled single-cell samples via Kernel Herding. Our sketeches select a small, representative set of cells from each profiled sample so that all major immune cell-types and their relative frequencies are well-represented. 
+We provide a set of functions for distribution-aware sketching of multiple profiled single-cell samples via Kernel Herding. Our sketches select a small, representative set of cells from each profiled sample so that all major immune cell-types and their relative frequencies are well-represented. 
 * Please see our paper for more information (ACM-BCB 2022) : https://arxiv.org/abs/2207.00584
-* Updated : July 25, 2022
+* Updated : June 27, 2023
 
-![Sketching via KH Overview](sketch_overview.png)
+![Sketching via KH Overview](https://github.com/CompCy-lab/SketchKH/blob/main/sketch_overview.png?raw=True)
 
 ## Installation
 Dependencies
-* Python >= 3.6, anndata 0.7.6, numpy 1.22.4, scipy 1.7.1, tqdm 4.64.0, scanpy 1.8.1
+* Python >= 3.6, anndata >= 0.7.6, numpy >= 1.22.4, scipy >= 1.7.1, tqdm
 
-You can clone the git repository by,
+You can install the package with `pip` by,
+```
+pip install sketchKH
+```
+
+Alternatively, you can clone the git repository by,
 ```
 git clone https://github.com/CompCy-lab/SketchKH.git
 ```
@@ -21,10 +26,11 @@ git clone https://github.com/CompCy-lab/SketchKH.git
 To perform sketching, first read in a preprocessed `.h5ad` adata object. This dataset contains multiple profiled single-cell samples. Hence, sketches will select a limited set of cells from each profiled sample. We refer to each profiled sample as a *sample-set*. 
 
 ```python
-import scanpy as sc
+import anndata
 import os
-adata = sc.read_h5ad(os.path.join('data', 'nk_cell_preprocessed.h5ad'))
+adata = anndata.read_h5ad(os.path.join('data', 'nk_cell_preprocessed.h5ad'))
 ```
+
 Then simply sketch your data with 500 cells per sample-set by,
 ```python
 
@@ -43,6 +49,6 @@ Then simply sketch your data with 500 cells per sample-set by,
 # adata_subsample: downsampled annotated data object (dimensions = num_subsamples*sample-sets x features)
 
 # ----------------------------
-from kh import sketch
-kh_indices, adata_subsample = sketch(adata, sample_set_key = 'FCS_File', gamma = 1, num_subsamples = 500, n_jobs = -1)
+from sketchKH import *
+kh_indices, adata_subsample = sketch(adata, sample_set_key = 'FCS_File', gamma = 1, num_subsamples = 500, frequency_seed = 0, n_jobs = -1)
 ```

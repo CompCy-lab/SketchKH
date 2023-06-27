@@ -6,6 +6,7 @@ import anndata
 from typing import Union
 import scipy
 import logging
+from pandas.api.types import is_numeric_dtype
 
 def random_feats(X: np.ndarray,
                 gamma: Union[int, float] = 1,
@@ -87,6 +88,9 @@ def _parse_input(adata: anndata.AnnData):
             X = adata.X.copy()
         if isinstance(X, scipy.sparse.csr_matrix):
             X = np.asarray(X.todense())
+        if is_numeric_dtype(adata.obs_names):
+            logging.warning('Converting cell IDs to strings.')
+            adata.obs_names = adata.obs_names.astype('str')
     except NameError:
         pass
     
@@ -165,7 +169,8 @@ def sketch(adata,
         n_jobs = mp.cpu_count() + 1 + n_jobs
 
     if isinstance(adata, anndata.AnnData) and (sample_set_key is not None):
-        sample_set_id = np.asarray(adata.obs[sample_set_key].cat.categories)
+        sample_set_id, idx = np.unique(adata.obs[sample_set_key], return_index = True)
+        sample_set_id = sample_set_id[np.argsort(idx)]
         sample_set_inds = [np.where(adata.obs[sample_set_key] == i)[0] for i in sample_set_id]
     elif sample_set_inds is None:
         sample_set_inds = [np.arange(0, adata.X.shape[0])]
@@ -181,13 +186,13 @@ def sketch(adata,
     p = mp.Pool(n_jobs)
 
     kh_indices = []
-    for result in tqdm(p.imap(partial(kernel_herding_main, X = X, gamma = gamma, frequency_seed = frequency_seed, num_subsamples = num_subsamples), sample_set_inds),total = n_sample_sets, desc = 'performing subsampling'):
+    for result in tqdm(p.imap(partial(kernel_herding_main, X = X, gamma = gamma, frequency_seed = frequency_seed, num_subsamples = num_subsamples), sample_set_inds), total = n_sample_sets, desc = 'performing subsampling'):
         kh_indices.append(result)
 
     adata_subsample = []
     for i in range(0, len(sample_set_inds)):
-        sample_set = adata[sample_set_inds[i], :]
-        subsampled_sample_set = sample_set[sample_set.obs.iloc[kh_indices[i]].index]
+        sample_set = adata[sample_set_inds[i], :].copy()
+        subsampled_sample_set = sample_set[kh_indices[i], :].copy()
         adata_subsample.append(subsampled_sample_set)
 
     adata_subsample = anndata.concat(adata_subsample)
