@@ -4,7 +4,7 @@ Distribution-Informed Sketching with Kernel Herding
 ## Overview
 We provide a set of functions for distribution-aware sketching of multiple profiled single-cell samples via Kernel Herding. Our sketches select a small, representative set of cells from each profiled sample so that all major immune cell-types and their relative frequencies are well-represented. 
 * Please see our paper for more information (ACM-BCB 2022) : https://arxiv.org/abs/2207.00584
-* Updated : June 27, 2023
+* Updated : February 14, 2024
 
 ![Sketching via KH Overview](https://github.com/CompCy-lab/SketchKH/blob/main/sketch_overview.png?raw=True)
 
