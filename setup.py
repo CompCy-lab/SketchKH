@@ -5,7 +5,7 @@ with open('README.md', 'r') as f:
 
 setup(
     name='sketchKH',
-    version='0.1.0',
+    version='0.1.1',
     description='Distribution-based sketching of single-cell samples',
     author='CompCy Lab',
     author_email='compcylab@gmail.com',
