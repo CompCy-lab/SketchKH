@@ -62,10 +62,10 @@ def kernel_herding(phi: np.ndarray,
     w_0 = w_t
     kh_indices = []
     while len(kh_indices) < num_subsamples:
-        new_ind = np.argmax(np.dot(phi, w_t))
+        indices = np.argsort(np.dot(phi, w_t))[::-1]
+        new_ind = next((idx for idx in indices if idx not in kh_indices), None)
         w_t = w_t + w_0 - phi[new_ind]
         kh_indices.append(new_ind)
-        kh_indices = list(set(kh_indices))
 
     return kh_indices
 
