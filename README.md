@@ -4,13 +4,13 @@ Distribution-Informed Sketching with Kernel Herding
 ## Overview
 We provide a set of functions for distribution-aware sketching of multiple profiled single-cell samples via Kernel Herding. Our sketches select a small, representative set of cells from each profiled sample so that all major immune cell-types and their relative frequencies are well-represented. 
 * Please see our paper for more information (ACM-BCB 2022) : https://arxiv.org/abs/2207.00584
-* Updated : February 14, 2024
+* Updated : December 27, 2024
 
 ![Sketching via KH Overview](https://github.com/CompCy-lab/SketchKH/blob/main/sketch_overview.png?raw=True)
 
 ## Installation
 Dependencies
-* Python >= 3.6, anndata >= 0.7.6, numpy >= 1.22.4, scipy >= 1.7.1, tqdm
+* Python >= 3.6 < 3.10, anndata >= 0.7.6, numpy >= 1.22.4, scipy >= 1.7.1, numba, joblib, tqdm_joblib
 
 You can install the package with `pip` by,
 ```

@@ -5,13 +5,13 @@ with open('README.md', 'r') as f:
 
 setup(
     name='sketchKH',
-    version='0.1.1',
+    version='0.1.2',
     description='Distribution-based sketching of single-cell samples',
     author='CompCy Lab',
     author_email='compcylab@gmail.com',
     url='https://github.com/CompCy-lab/SketchKH',
     license='MIT',
-    python_requires='>=3.6',
+    python_requires='>=3.6, <3.10',
     long_description=long_description,
     long_description_content_type = 'text/markdown',
     packages = find_packages(),
@@ -37,7 +37,10 @@ setup(
         'anndata>=0.7.6',
         'numpy>=1.22.4',
         'scipy>=1.7.1',
+        'numba',
         'tqdm',
+        'joblib',
+        'tqdm_joblib',
     ],
     ext_modules=[],
 )

@@ -1,5 +1,3 @@
-import multiprocessing as mp
-from functools import partial
 import numpy as np
 from tqdm import tqdm
 import anndata
@@ -7,6 +5,9 @@ from typing import Union
 import scipy
 import logging
 from pandas.api.types import is_numeric_dtype
+from numba import njit
+from joblib import Parallel, delayed
+from tqdm_joblib import tqdm_joblib
 
 def random_feats(X: np.ndarray,
                 gamma: Union[int, float] = 1,
@@ -42,9 +43,9 @@ def random_feats(X: np.ndarray,
 
     return phi
 
-def kernel_herding(phi: np.ndarray,
-                    num_subsamples: int = None):
-    """Performs kernel herding subsampling: https://arxiv.org/abs/1203.3472
+@njit
+def kernel_herding(phi: np.ndarray, num_subsamples: int):
+    """Performs kernel herding subsampling: https://arxiv.org/abs/1203.3472 using numba 
 
     Parameters
     phi: np.ndarray
@@ -58,14 +59,36 @@ def kernel_herding(phi: np.ndarray,
         indices of subsampled cells
     ----------
     """
-    w_t = np.mean(phi, axis=0)
-    w_0 = w_t
-    kh_indices = []
-    while len(kh_indices) < num_subsamples:
-        indices = np.argsort(np.dot(phi, w_t))[::-1]
-        new_ind = next((idx for idx in indices if idx not in kh_indices), None)
-        w_t = w_t + w_0 - phi[new_ind]
-        kh_indices.append(new_ind)
+    num_cells, num_features = phi.shape
+    kh_indices = np.empty(num_subsamples, dtype=np.int64)
+    selected_mask = np.zeros(num_cells, dtype=np.int8)
+
+    w_t = np.zeros(num_features)
+    for i in range(num_features):
+        total = 0.0
+        for j in range(num_cells):
+            total += phi[j, i]
+        w_t[i] = total / num_cells
+
+    w_0 = np.copy(w_t)
+    for subsample_idx in range(num_subsamples): #find argmax
+        max_score = -1e20
+        new_ind = -1
+        for cell_idx in range(num_cells):
+            if selected_mask[cell_idx] == 0:
+                score = 0.0
+                for feature_idx in range(num_features):
+                    score += phi[cell_idx, feature_idx] * w_t[feature_idx]
+                if score > max_score:
+                    max_score = score
+                    new_ind = cell_idx
+        if new_ind == -1:
+            raise ValueError("Not enough unique indices to sample.")
+        kh_indices[subsample_idx] = new_ind
+        selected_mask[new_ind] = 1
+        #update w_t
+        for feature_idx in range(num_features):
+            w_t[feature_idx] += w_0[feature_idx] - phi[new_ind, feature_idx]
 
     return kh_indices
 
@@ -164,9 +187,9 @@ def sketch(adata,
     ----------
     """
     if n_jobs == -1:
-        n_jobs = mp.cpu_count()
+        n_jobs = Parallel().n_jobs
     elif n_jobs < -1:
-        n_jobs = mp.cpu_count() + 1 + n_jobs
+        n_jobs = Parallel().n_jobs + 1 + n_jobs
 
     if isinstance(adata, anndata.AnnData) and (sample_set_key is not None):
         sample_set_id, idx = np.unique(adata.obs[sample_set_key], return_index = True)
@@ -183,18 +206,14 @@ def sketch(adata,
     n_sample_sets = len(sample_set_inds)
     X = _parse_input(adata)
 
-    p = mp.Pool(n_jobs)
+    def process_set(i, inds):
+        return kernel_herding_main(sample_set_ind = inds, X = X, gamma = gamma, frequency_seed = frequency_seed, num_subsamples = num_subsamples)
 
-    kh_indices = []
-    for result in tqdm(p.imap(partial(kernel_herding_main, X = X, gamma = gamma, frequency_seed = frequency_seed, num_subsamples = num_subsamples), sample_set_inds), total = n_sample_sets, desc = 'performing subsampling'):
-        kh_indices.append(result)
+    with tqdm_joblib(tqdm(desc="Performing subsampling", total = n_sample_sets)):
+        kh_indices = Parallel(n_jobs=n_jobs)(delayed(process_set)(i, inds) for i, inds in enumerate(sample_set_inds))
 
-    adata_subsample = []
-    for i in range(0, len(sample_set_inds)):
-        sample_set = adata[sample_set_inds[i], :].copy()
-        subsampled_sample_set = sample_set[kh_indices[i], :].copy()
-        adata_subsample.append(subsampled_sample_set)
-
-    adata_subsample = anndata.concat(adata_subsample)
+    subsampled_cell_indices = [sample_set_inds[i][kh_indices[i]] for i in range(n_sample_sets)]
+    subsampled_cell_indices = np.concatenate(subsampled_cell_indices)
+    adata_subsample = adata[subsampled_cell_indices, :].copy()
 
     return kh_indices, adata_subsample
